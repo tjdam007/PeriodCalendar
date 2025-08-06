@@ -5,3 +5,4 @@ local.properties
 app/build/*
 local.properties.template
 /build/reports/problems/problems-report.html
+/.kotlin/

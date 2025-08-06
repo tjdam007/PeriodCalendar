@@ -2,9 +2,7 @@ package com.mjandroiddev.periodcalendar.di
 
 import android.content.Context
 import androidx.room.Room
-import com.mjandroiddev.periodcalendar.data.database.CycleDao
-import com.mjandroiddev.periodcalendar.data.database.PeriodDao
-import com.mjandroiddev.periodcalendar.data.database.PeriodDatabase
+import com.mjandroiddev.periodcalendar.data.database.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,9 +21,22 @@ object DatabaseModule {
             context,
             PeriodDatabase::class.java,
             PeriodDatabase.DATABASE_NAME
-        ).build()
+        ).fallbackToDestructiveMigration() // For development - remove in production
+            .build()
     }
 
+    // New DAOs
+    @Provides
+    fun provideCycleEntryDao(database: PeriodDatabase): CycleEntryDao {
+        return database.cycleEntryDao()
+    }
+
+    @Provides
+    fun provideUserSettingsDao(database: PeriodDatabase): UserSettingsDao {
+        return database.userSettingsDao()
+    }
+
+    // Legacy DAOs (to be deprecated)
     @Provides
     fun providePeriodDao(database: PeriodDatabase): PeriodDao {
         return database.periodDao()

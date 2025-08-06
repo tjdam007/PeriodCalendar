@@ -7,12 +7,23 @@ import androidx.room.TypeConverters
 import android.content.Context
 
 @Database(
-    entities = [PeriodEntity::class, CycleEntity::class],
-    version = 1,
+    entities = [
+        CycleEntry::class,
+        UserSettings::class,
+        // Legacy entities (to be deprecated)
+        PeriodEntity::class,
+        CycleEntity::class
+    ],
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class PeriodDatabase : RoomDatabase() {
+    // New DAOs
+    abstract fun cycleEntryDao(): CycleEntryDao
+    abstract fun userSettingsDao(): UserSettingsDao
+    
+    // Legacy DAOs (to be deprecated)
     abstract fun periodDao(): PeriodDao
     abstract fun cycleDao(): CycleDao
 
