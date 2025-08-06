@@ -1,19 +1,19 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.mjandroiddev.periodcalendar"
-    compileSdk = 34
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.mjandroiddev.periodcalendar"
-        minSdk = 26
-        targetSdk = 34
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -33,17 +33,18 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        val javaVersion = JavaVersion.toVersion(libs.versions.jvmTarget.get())
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = libs.versions.jvmTarget.get()
     }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        kotlinCompilerExtensionVersion = libs.versions.compose-compiler.get()
     }
     packaging {
         resources {
@@ -53,45 +54,41 @@ android {
 }
 
 dependencies {
+    // Core Android
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    
+    // Lifecycle
+    implementation(libs.bundles.lifecycle)
 
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
+    // Compose BOM and UI
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.bundles.compose)
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.6")
-
-    // ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation(libs.androidx.navigation.compose)
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.48.1")
-    kapt("com.google.dagger:hilt-android-compiler:2.48.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation(libs.bundles.room)
+    ksp(libs.androidx.room.compiler)
 
     // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-    implementation("androidx.hilt:hilt-work:1.1.0")
-    kapt("androidx.hilt:hilt-compiler:1.1.0")
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    kapt(libs.androidx.hilt.compiler)
 
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    // Testing
+    testImplementation(libs.bundles.testing)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    
+    // Debug
+    debugImplementation(libs.bundles.debug)
 }
 
 kapt {
