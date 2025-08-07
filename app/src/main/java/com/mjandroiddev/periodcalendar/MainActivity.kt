@@ -46,7 +46,11 @@ private fun PeriodCalendarApp() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            PeriodCalendarNavigation()
+            PeriodCalendarNavigation(
+                onThemeChanged = { themeMode ->
+                    settingsViewModel.updateThemeMode(themeMode)
+                }
+            )
         }
     }
 }

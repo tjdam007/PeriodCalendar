@@ -6,3 +6,4 @@ app/build/*
 local.properties.template
 /build/reports/problems/problems-report.html
 /.kotlin/
+/app/release/*

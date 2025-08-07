@@ -41,6 +41,7 @@ import com.mjandroiddev.periodcalendar.ui.viewmodel.SettingsViewModel
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToAbout: (() -> Unit)? = null,
     onThemeChanged: (ThemeMode) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -63,6 +64,7 @@ fun SettingsScreen(
         },
         onResetToDefaults = viewModel::resetToDefaults,
         onNavigateBack = onNavigateBack,
+        onNavigateToAbout = onNavigateToAbout,
         onClearSaveMessage = viewModel::clearSaveMessage
     )
 }
@@ -82,6 +84,7 @@ private fun SettingsScreenContent(
     onThemeChanged: (ThemeMode) -> Unit,
     onResetToDefaults: () -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToAbout: (() -> Unit)?,
     onClearSaveMessage: () -> Unit
 ) {
     val context = LocalContext.current
@@ -282,6 +285,47 @@ private fun SettingsScreenContent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
+                }
+            }
+            
+            // About Section
+            if (onNavigateToAbout != null) {
+                Card(
+                    modifier = Modifier.clickable { onNavigateToAbout() },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "About Period Calendar",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Version 1.0.0 • Learn more about features and privacy",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Navigate to About",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -604,6 +648,7 @@ private fun SettingsScreenLightPreview() {
                 onThemeChanged = { },
                 onResetToDefaults = { },
                 onNavigateBack = { },
+                onNavigateToAbout = { },
                 onClearSaveMessage = { }
             )
         }
@@ -634,6 +679,7 @@ private fun SettingsScreenDarkPreview() {
                 onThemeChanged = { },
                 onResetToDefaults = { },
                 onNavigateBack = { },
+                onNavigateToAbout = { },
                 onClearSaveMessage = { }
             )
         }

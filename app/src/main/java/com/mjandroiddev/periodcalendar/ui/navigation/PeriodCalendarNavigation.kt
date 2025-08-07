@@ -1,101 +1,81 @@
 package com.mjandroiddev.periodcalendar.ui.navigation
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.mjandroiddev.periodcalendar.ui.screens.CalendarScreen
-import com.mjandroiddev.periodcalendar.ui.screens.CycleScreen
-import com.mjandroiddev.periodcalendar.ui.screens.LogEntryScreen
-import com.mjandroiddev.periodcalendar.ui.screens.SettingsScreen
+import androidx.navigation.navArgument
+import com.mjandroiddev.periodcalendar.data.model.ThemeMode
+import com.mjandroiddev.periodcalendar.ui.screens.*
 import java.time.LocalDate
 
-data class BottomNavItem(
-    val screen: Screen,
-    val icon: ImageVector,
-    val label: String
-)
 
-val bottomNavItems = listOf(
-    BottomNavItem(Screen.Calendar, Icons.Filled.CalendarMonth, "Calendar"),
-    BottomNavItem(Screen.Cycle, Icons.Filled.Analytics, "Cycles"),
-    BottomNavItem(Screen.Settings, Icons.Filled.Settings, "Settings")
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PeriodCalendarNavigation() {
+fun PeriodCalendarNavigation(
+    onThemeChanged: (ThemeMode) -> Unit = {}
+) {
     val navController = rememberNavController()
     
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-
-                bottomNavItems.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) },
-                        selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true,
-                        onClick = {
-                            navController.navigate(item.screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Splash.route
+    ) {
+        // Splash Screen
+        composable(Screen.Splash.route) {
+            SplashScreen(
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
                 }
-            }
+            )
         }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Calendar.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Calendar.route) {
-                CalendarScreen(
-                    onNavigateToLogEntry = { date ->
-                        val dateString = date.toString()
-                        navController.navigate(Screen.LogEntry.createRoute(dateString))
-                    }
-                )
+        
+        // Home Screen (with bottom navigation)
+        composable(Screen.Home.route) {
+            HomeScreen(
+                onNavigateToLogEntry = { date ->
+                    navController.navigate(Screen.LogEntry.createRoute(date))
+                },
+                onNavigateToAbout = {
+                    navController.navigate(Screen.About.route)
+                }
+            )
+        }
+        
+        // Log Entry Screen with date argument
+        composable(
+            route = Screen.LogEntry.route,
+            arguments = listOf(
+                navArgument(Screen.LogEntry.DATE_ARG) {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val dateString = backStackEntry.arguments?.getString(Screen.LogEntry.DATE_ARG) 
+                ?: LocalDate.now().toString()
+            val selectedDate = try {
+                LocalDate.parse(dateString)
+            } catch (e: Exception) {
+                LocalDate.now()
             }
-            composable(Screen.Cycle.route) {
-                CycleScreen()
-            }
-            composable(Screen.Settings.route) {
-                SettingsScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
-            }
-            composable(Screen.LogEntry.route) { backStackEntry ->
-                val dateString = backStackEntry.arguments?.getString("date") ?: LocalDate.now().toString()
-                val selectedDate = LocalDate.parse(dateString)
-                LogEntryScreen(
-                    selectedDate = selectedDate,
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
-            }
+            
+            LogEntryScreen(
+                selectedDate = selectedDate,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // About Screen
+        composable(Screen.About.route) {
+            AboutScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
