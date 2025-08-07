@@ -20,7 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mjandroiddev.periodcalendar.data.database.CycleEntry
-import com.mjandroiddev.periodcalendar.data.model.*
+import com.mjandroiddev.periodcalendar.data.model.FlowLevel
+import com.mjandroiddev.periodcalendar.data.model.MoodType
+import com.mjandroiddev.periodcalendar.data.model.CrampLevel
 import com.mjandroiddev.periodcalendar.ui.components.CardWithTitle
 import com.mjandroiddev.periodcalendar.ui.components.PeriodButton
 import com.mjandroiddev.periodcalendar.ui.theme.PeriodCalendarTheme
@@ -68,18 +70,18 @@ private fun LogEntryScreenContent(
     onNavigateBack: () -> Unit
 ) {
     var isPeriod by remember { mutableStateOf(existingEntry?.isPeriod ?: false) }
-    var selectedFlow by remember { mutableStateOf(existingEntry?.getFlowLevelEnum() ?: FlowLevel.NONE) }
-    var selectedMood by remember { mutableStateOf(existingEntry?.getMoodEnum() ?: Mood.NONE) }
-    var selectedCramps by remember { mutableStateOf(existingEntry?.getCrampsLevelEnum() ?: CrampsLevel.NONE) }
+    var selectedFlow by remember { mutableStateOf(existingEntry?.flowLevel ?: FlowLevel.NONE) }
+    var selectedMood by remember { mutableStateOf(existingEntry?.mood ?: MoodType.HAPPY) }
+    var selectedCramps by remember { mutableStateOf(existingEntry?.cramps ?: CrampLevel.NONE) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     
     val hasChanges = remember(isPeriod, selectedFlow, selectedMood, selectedCramps, existingEntry) {
         existingEntry?.let { entry ->
             entry.isPeriod != isPeriod ||
-            entry.getFlowLevelEnum() != selectedFlow ||
-            entry.getMoodEnum() != selectedMood ||
-            entry.getCrampsLevelEnum() != selectedCramps
-        } ?: (isPeriod || selectedFlow != FlowLevel.NONE || selectedMood != Mood.NONE || selectedCramps != CrampsLevel.NONE)
+            entry.flowLevel != selectedFlow ||
+            entry.mood != selectedMood ||
+            entry.cramps != selectedCramps
+        } ?: (isPeriod || selectedFlow != FlowLevel.NONE || selectedMood != MoodType.HAPPY || selectedCramps != CrampLevel.NONE)
     }
     
     Scaffold(
@@ -191,9 +193,9 @@ private fun LogEntryScreenContent(
                         id = existingEntry?.id ?: 0,
                         date = selectedDate,
                         isPeriod = isPeriod,
-                        flowLevel = selectedFlow.value,
-                        mood = selectedMood.value,
-                        cramps = selectedCramps.value
+                        flowLevel = if (isPeriod) selectedFlow else null,
+                        mood = selectedMood,
+                        cramps = selectedCramps
                     )
                     onSaveEntry(entry)
                 },
@@ -320,10 +322,10 @@ private fun FlowLevelSelector(
 
 @Composable
 private fun MoodSelector(
-    selectedMood: Mood,
-    onMoodSelected: (Mood) -> Unit
+    selectedMood: MoodType,
+    onMoodSelected: (MoodType) -> Unit
 ) {
-    val targetMoods = listOf(Mood.HAPPY, Mood.SAD, Mood.ANGRY, Mood.ANXIOUS)
+    val targetMoods = listOf(MoodType.HAPPY, MoodType.SAD, MoodType.IRRITABLE, MoodType.ANXIOUS)
     
     Column {
         Text(
@@ -342,7 +344,7 @@ private fun MoodSelector(
                     mood = mood,
                     isSelected = selectedMood == mood,
                     onClick = { 
-                        onMoodSelected(if (selectedMood == mood) Mood.NONE else mood)
+                        onMoodSelected(mood)
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -354,7 +356,7 @@ private fun MoodSelector(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MoodCard(
-    mood: Mood,
+    mood: MoodType,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -380,10 +382,10 @@ private fun MoodCard(
         ) {
             Icon(
                 imageVector = when (mood) {
-                    Mood.HAPPY -> Icons.Default.SentimentVerySatisfied
-                    Mood.SAD -> Icons.Default.SentimentDissatisfied
-                    Mood.ANGRY -> Icons.Default.SentimentVeryDissatisfied
-                    Mood.ANXIOUS -> Icons.Default.Psychology
+                    MoodType.HAPPY -> Icons.Default.SentimentVerySatisfied
+                    MoodType.SAD -> Icons.Default.SentimentDissatisfied
+                    MoodType.IRRITABLE -> Icons.Default.SentimentVeryDissatisfied
+                    MoodType.ANXIOUS -> Icons.Default.Psychology
                     else -> Icons.Default.Mood
                 },
                 contentDescription = mood.displayName,
@@ -411,10 +413,10 @@ private fun MoodCard(
 
 @Composable
 private fun CrampsLevelSelector(
-    selectedCramps: CrampsLevel,
-    onCrampsSelected: (CrampsLevel) -> Unit
+    selectedCramps: CrampLevel,
+    onCrampsSelected: (CrampLevel) -> Unit
 ) {
-    val crampsLevels = CrampsLevel.entries
+    val crampsLevels = CrampLevel.entries
     
     Column {
         Text(
@@ -442,7 +444,7 @@ private fun CrampsLevelSelector(
 
 @Composable
 private fun CrampsButton(
-    crampsLevel: CrampsLevel,
+    crampsLevel: CrampLevel,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -479,10 +481,10 @@ private fun CrampsButton(
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 val dotsCount = when (crampsLevel) {
-                    CrampsLevel.NONE -> 0
-                    CrampsLevel.MILD -> 1
-                    CrampsLevel.MODERATE -> 2
-                    CrampsLevel.SEVERE -> 3
+                    CrampLevel.NONE -> 0
+                    CrampLevel.MILD -> 1
+                    CrampLevel.MODERATE -> 2
+                    CrampLevel.SEVERE -> 3
                 }
                 
                 repeat(3) { index ->
@@ -495,9 +497,9 @@ private fun CrampsButton(
                                         MaterialTheme.colorScheme.onPrimaryContainer
                                     } else {
                                         when (crampsLevel) {
-                                            CrampsLevel.MILD -> Color(0xFF4CAF50)
-                                            CrampsLevel.MODERATE -> Color(0xFFFF9800)
-                                            CrampsLevel.SEVERE -> Color(0xFFFF5722)
+                                            CrampLevel.MILD -> Color(0xFF4CAF50)
+                                            CrampLevel.MODERATE -> Color(0xFFFF9800)
+                                            CrampLevel.SEVERE -> Color(0xFFFF5722)
                                             else -> Color.Transparent
                                         }
                                     }
@@ -549,9 +551,9 @@ private fun LogEntryScreenDarkPreview() {
                     id = 1,
                     date = LocalDate.now(),
                     isPeriod = true,
-                    flowLevel = FlowLevel.MEDIUM.value,
-                    mood = Mood.HAPPY.value,
-                    cramps = CrampsLevel.MODERATE.value
+                    flowLevel = FlowLevel.MEDIUM,
+                    mood = MoodType.HAPPY,
+                    cramps = CrampLevel.MODERATE
                 ),
                 onSaveEntry = { },
                 onDeleteEntry = { },

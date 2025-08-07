@@ -13,7 +13,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mjandroiddev.periodcalendar.data.database.CycleEntry
 import com.mjandroiddev.periodcalendar.data.database.UserSettings
-import com.mjandroiddev.periodcalendar.data.model.*
+import com.mjandroiddev.periodcalendar.data.model.FlowLevel
+import com.mjandroiddev.periodcalendar.data.model.MoodType
+import com.mjandroiddev.periodcalendar.data.model.CrampLevel
 import com.mjandroiddev.periodcalendar.ui.components.MonthlyCalendar
 import com.mjandroiddev.periodcalendar.ui.theme.PeriodCalendarTheme
 import com.mjandroiddev.periodcalendar.ui.viewmodel.CalendarViewModel
@@ -89,17 +91,17 @@ private fun CalendarScreenLightPreview() {
                         id = 1,
                         date = LocalDate.now().minusDays(5),
                         isPeriod = true,
-                        flowLevel = FlowLevel.MEDIUM.value,
-                        mood = Mood.TIRED.value,
-                        cramps = CrampsLevel.MILD.value
+                        flowLevel = FlowLevel.MEDIUM,
+                        mood = MoodType.TIRED,
+                        cramps = CrampLevel.MILD
                     ),
                     CycleEntry(
                         id = 2,
                         date = LocalDate.now().minusDays(4),
                         isPeriod = true,
-                        flowLevel = FlowLevel.HEAVY.value,
-                        mood = Mood.SAD.value,
-                        cramps = CrampsLevel.MODERATE.value
+                        flowLevel = FlowLevel.HEAVY,
+                        mood = MoodType.SAD,
+                        cramps = CrampLevel.MODERATE
                     )
                 ),
                 userSettings = UserSettings(),
@@ -120,17 +122,17 @@ private fun CalendarScreenDarkPreview() {
                         id = 1,
                         date = LocalDate.now().minusDays(3),
                         isPeriod = true,
-                        flowLevel = FlowLevel.LIGHT.value,
-                        mood = Mood.HAPPY.value,
-                        cramps = CrampsLevel.NONE.value
+                        flowLevel = FlowLevel.LIGHT,
+                        mood = MoodType.HAPPY,
+                        cramps = null
                     ),
                     CycleEntry(
                         id = 2,
                         date = LocalDate.now().plusDays(2),
                         isPeriod = false,
-                        flowLevel = FlowLevel.NONE.value,
-                        mood = Mood.ENERGETIC.value,
-                        cramps = CrampsLevel.NONE.value
+                        flowLevel = null,
+                        mood = MoodType.ENERGETIC,
+                        cramps = null
                     )
                 ),
                 userSettings = UserSettings(avgCycleLength = 30, periodDuration = 6),

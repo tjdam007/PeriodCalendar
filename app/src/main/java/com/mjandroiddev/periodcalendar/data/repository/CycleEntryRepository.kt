@@ -2,6 +2,9 @@ package com.mjandroiddev.periodcalendar.data.repository
 
 import com.mjandroiddev.periodcalendar.data.database.CycleEntry
 import com.mjandroiddev.periodcalendar.data.database.CycleEntryDao
+import com.mjandroiddev.periodcalendar.data.model.FlowLevel
+import com.mjandroiddev.periodcalendar.data.model.MoodType
+import com.mjandroiddev.periodcalendar.data.model.CrampLevel
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import javax.inject.Inject
@@ -72,9 +75,9 @@ class CycleEntryRepository @Inject constructor(
     suspend fun addOrUpdateDayEntry(
         date: LocalDate,
         isPeriod: Boolean = false,
-        flowLevel: String = "none",
-        mood: String = "",
-        cramps: String = "none"
+        flowLevel: FlowLevel? = null,
+        mood: MoodType? = null,
+        cramps: CrampLevel? = null
     ): Long {
         val existingEntry = getEntryByDate(date)
         return if (existingEntry != null) {
@@ -98,7 +101,7 @@ class CycleEntryRepository @Inject constructor(
         }
     }
     
-    suspend fun markPeriodDays(startDate: LocalDate, endDate: LocalDate, flowLevel: String = "medium") {
+    suspend fun markPeriodDays(startDate: LocalDate, endDate: LocalDate, flowLevel: FlowLevel = FlowLevel.MEDIUM) {
         var currentDate = startDate
         val entries = mutableListOf<CycleEntry>()
         
@@ -112,8 +115,8 @@ class CycleEntryRepository @Inject constructor(
                         date = currentDate,
                         isPeriod = true,
                         flowLevel = flowLevel,
-                        mood = "",
-                        cramps = "none"
+                        mood = null,
+                        cramps = null
                     )
                 )
             }
@@ -123,7 +126,7 @@ class CycleEntryRepository @Inject constructor(
         insertEntries(entries)
     }
     
-    suspend fun updateMoodForDate(date: LocalDate, mood: String) {
+    suspend fun updateMoodForDate(date: LocalDate, mood: MoodType?) {
         val entry = getEntryByDate(date)
         if (entry != null) {
             updateEntry(entry.copy(mood = mood))
@@ -132,15 +135,15 @@ class CycleEntryRepository @Inject constructor(
                 CycleEntry(
                     date = date,
                     isPeriod = false,
-                    flowLevel = "none",
+                    flowLevel = null,
                     mood = mood,
-                    cramps = "none"
+                    cramps = null
                 )
             )
         }
     }
     
-    suspend fun updateCrampsForDate(date: LocalDate, cramps: String) {
+    suspend fun updateCrampsForDate(date: LocalDate, cramps: CrampLevel?) {
         val entry = getEntryByDate(date)
         if (entry != null) {
             updateEntry(entry.copy(cramps = cramps))
@@ -149,8 +152,8 @@ class CycleEntryRepository @Inject constructor(
                 CycleEntry(
                     date = date,
                     isPeriod = false,
-                    flowLevel = "none",
-                    mood = "",
+                    flowLevel = null,
+                    mood = null,
                     cramps = cramps
                 )
             )

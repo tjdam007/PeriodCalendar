@@ -28,9 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mjandroiddev.periodcalendar.data.database.CycleEntry
 import com.mjandroiddev.periodcalendar.data.database.UserSettings
-import com.mjandroiddev.periodcalendar.data.model.*
+import com.mjandroiddev.periodcalendar.data.model.FlowLevel
+import com.mjandroiddev.periodcalendar.data.model.MoodType
+import com.mjandroiddev.periodcalendar.data.model.CrampLevel
 import com.mjandroiddev.periodcalendar.ui.theme.PeriodCalendarTheme
-import com.mjandroiddev.periodcalendar.utils.CyclePredictionUtil
+// import com.mjandroiddev.periodcalendar.utils.CyclePredictionUtil // TODO: Implement
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -49,9 +51,9 @@ data class CalendarDayState(
     val isSelected: Boolean = false,
     val isCurrentMonth: Boolean = true,
     val hasSymptoms: Boolean = false,
-    val mood: Mood = Mood.NONE,
-    val crampsLevel: CrampsLevel = CrampsLevel.NONE,
-    val flowLevel: FlowLevel = FlowLevel.NONE,
+    val mood: MoodType? = null,
+    val crampsLevel: CrampLevel? = null,
+    val flowLevel: FlowLevel? = null,
     val cycleEntry: CycleEntry? = null
 )
 
@@ -303,7 +305,7 @@ private fun SymptomIndicators(dayState: CalendarDayState) {
         horizontalArrangement = Arrangement.spacedBy(1.dp)
     ) {
         // Mood indicator
-        if (dayState.mood != Mood.NONE) {
+        if (dayState.mood != null) {
             Box(
                 modifier = Modifier
                     .size(4.dp)
@@ -315,7 +317,7 @@ private fun SymptomIndicators(dayState: CalendarDayState) {
         }
         
         // Cramps indicator
-        if (dayState.crampsLevel != CrampsLevel.NONE) {
+        if (dayState.crampsLevel != null) {
             Box(
                 modifier = Modifier
                     .size(4.dp)
@@ -329,25 +331,26 @@ private fun SymptomIndicators(dayState: CalendarDayState) {
 }
 
 @Composable
-private fun getMoodColor(mood: Mood): Color {
+private fun getMoodColor(mood: MoodType?): Color {
     return when (mood) {
-        Mood.HAPPY -> Color(0xFF4CAF50)
-        Mood.SAD -> Color(0xFF2196F3)
-        Mood.ANGRY -> Color(0xFFFF5722)
-        Mood.ANXIOUS -> Color(0xFFFF9800)
-        Mood.CALM -> Color(0xFF9C27B0)
-        Mood.ENERGETIC -> Color(0xFFFFEB3B)
-        Mood.TIRED -> Color(0xFF607D8B)
+        MoodType.HAPPY -> Color(0xFF4CAF50)
+        MoodType.SAD -> Color(0xFF2196F3)
+        MoodType.IRRITABLE -> Color(0xFFFF5722)
+        MoodType.ANXIOUS -> Color(0xFFFF9800)
+        MoodType.ENERGETIC -> Color(0xFFFFEB3B)
+        MoodType.TIRED -> Color(0xFF607D8B)
+        MoodType.EMOTIONAL -> Color(0xFF9C27B0)
+        MoodType.CONFIDENT -> Color(0xFF00BCD4)
         else -> Color.Transparent
     }
 }
 
 @Composable
-private fun getCrampsColor(crampsLevel: CrampsLevel): Color {
+private fun getCrampsColor(crampsLevel: CrampLevel?): Color {
     return when (crampsLevel) {
-        CrampsLevel.MILD -> Color(0xFFFFE0B2)
-        CrampsLevel.MODERATE -> Color(0xFFFFB74D)
-        CrampsLevel.SEVERE -> Color(0xFFFF5722)
+        CrampLevel.MILD -> Color(0xFFFFE0B2)
+        CrampLevel.MODERATE -> Color(0xFFFFB74D)
+        CrampLevel.SEVERE -> Color(0xFFFF5722)
         else -> Color.Transparent
     }
 }
@@ -375,28 +378,18 @@ private fun generateCalendarDays(
     val entryMap = cycleEntries.associateBy { it.date }
     val days = mutableListOf<CalendarDayState>()
     
+    // TODO: Implement cycle predictions
     // Generate predictions if we have last period data
-    val predictions = lastPeriodDate?.let {
-        try {
-            CyclePredictionUtil.predictCycle(it, userSettings.avgCycleLength)
-        } catch (e: Exception) {
-            null
-        }
-    }
+    val predictions: Any? = null // Placeholder until CyclePredictionUtil is implemented
     
     var currentDate = firstMonday
     while (!currentDate.isAfter(lastSunday)) {
         val entry = entryMap[currentDate]
         val isCurrentMonth = currentDate.monthValue == currentMonth.monthValue
         
-        // Determine if date is in fertile window or ovulation
-        val isFertile = predictions?.let { pred ->
-            !currentDate.isBefore(pred.fertileWindowStart) && !currentDate.isAfter(pred.fertileWindowEnd)
-        } ?: false
-        
-        val isOvulation = predictions?.let { pred ->
-            currentDate == pred.ovulationDate
-        } ?: false
+        // TODO: Implement fertile window and ovulation predictions
+        val isFertile = false // Placeholder
+        val isOvulation = false // Placeholder
         
         val dayState = CalendarDayState(
             date = currentDate,
@@ -406,10 +399,10 @@ private fun generateCalendarDays(
             isToday = currentDate == today,
             isSelected = currentDate == selectedDate,
             isCurrentMonth = isCurrentMonth,
-            hasSymptoms = entry?.let { it.mood.isNotEmpty() || it.cramps != CrampsLevel.NONE.value } ?: false,
-            mood = entry?.getMoodEnum() ?: Mood.NONE,
-            crampsLevel = entry?.getCrampsLevelEnum() ?: CrampsLevel.NONE,
-            flowLevel = entry?.getFlowLevelEnum() ?: FlowLevel.NONE,
+            hasSymptoms = entry?.let { it.mood != null || it.cramps != null } ?: false,
+            mood = entry?.mood,
+            crampsLevel = entry?.cramps,
+            flowLevel = entry?.flowLevel,
             cycleEntry = entry
         )
         
@@ -432,25 +425,25 @@ private fun MonthlyCalendarLightPreview() {
                     id = 1,
                     date = LocalDate.now().minusDays(5),
                     isPeriod = true,
-                    flowLevel = FlowLevel.MEDIUM.value,
-                    mood = Mood.TIRED.value,
-                    cramps = CrampsLevel.MILD.value
+                    flowLevel = FlowLevel.MEDIUM,
+                    mood = MoodType.TIRED,
+                    cramps = CrampLevel.MILD
                 ),
                 CycleEntry(
                     id = 2,
                     date = LocalDate.now().minusDays(4),
                     isPeriod = true,
-                    flowLevel = FlowLevel.HEAVY.value,
-                    mood = Mood.SAD.value,
-                    cramps = CrampsLevel.MODERATE.value
+                    flowLevel = FlowLevel.HEAVY,
+                    mood = MoodType.SAD,
+                    cramps = CrampLevel.MODERATE
                 ),
                 CycleEntry(
                     id = 3,
                     date = LocalDate.now().plusDays(3),
                     isPeriod = false,
-                    flowLevel = FlowLevel.NONE.value,
-                    mood = Mood.HAPPY.value,
-                    cramps = CrampsLevel.NONE.value
+                    flowLevel = null,
+                    mood = MoodType.HAPPY,
+                    cramps = null
                 )
             )
             
@@ -476,17 +469,17 @@ private fun MonthlyCalendarDarkPreview() {
                     id = 1,
                     date = LocalDate.now().minusDays(5),
                     isPeriod = true,
-                    flowLevel = FlowLevel.MEDIUM.value,
-                    mood = Mood.TIRED.value,
-                    cramps = CrampsLevel.MILD.value
+                    flowLevel = FlowLevel.MEDIUM,
+                    mood = MoodType.TIRED,
+                    cramps = CrampLevel.MILD
                 ),
                 CycleEntry(
                     id = 2,
                     date = LocalDate.now().minusDays(4),
                     isPeriod = true,
-                    flowLevel = FlowLevel.HEAVY.value,
-                    mood = Mood.ANGRY.value,
-                    cramps = CrampsLevel.SEVERE.value
+                    flowLevel = FlowLevel.HEAVY,
+                    mood = MoodType.IRRITABLE,
+                    cramps = CrampLevel.SEVERE
                 )
             )
             
