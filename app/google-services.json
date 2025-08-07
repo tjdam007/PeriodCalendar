@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "929082481455",
+    "project_id": "mjandroiddev-period-calendar",
+    "storage_bucket": "mjandroiddev-period-calendar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929082481455:android:31ae38db6fc61df94e5fda",
+        "android_client_info": {
+          "package_name": "com.mjandroiddev.periodcalendar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRzTsSazEAaepIZDi97RD1Azq9IHJAwiA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929082481455:android:6dbcd082282371114e5fda",
+        "android_client_info": {
+          "package_name": "com.mjandroiddev.periodcalendar.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRzTsSazEAaepIZDi97RD1Azq9IHJAwiA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

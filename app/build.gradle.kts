@@ -1,9 +1,14 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -23,15 +28,51 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val props = Properties()
+            val propFile = rootProject.file("release.properties")
+            if (propFile.exists()) {
+                props.load(FileInputStream(propFile))
+                storeFile =
+                    rootProject.file(props.getProperty("keystore.file", "periodcalendar.jks"))
+                storePassword = props.getProperty("keystore.password")
+                keyAlias = props.getProperty("key.alias")
+                keyPassword = props.getProperty("key.password")
+            } else {
+                println("⚠️ 'release.properties' not found. Signing config will be invalid for release builds.")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+
+    flavorDimensions += "core"
+    productFlavors {
+        create("production") {
+            dimension = "core"
+            applicationId = "com.mjandroiddev.periodcalendar"
+        }
+        create("dev") {
+            dimension = "core"
+            applicationId = "com.mjandroiddev.periodcalendar.dev"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -78,6 +119,10 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.bundles.firebase)
 
     // Testing
     testImplementation(libs.bundles.testing)

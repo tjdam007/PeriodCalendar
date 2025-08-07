@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mjandroiddev.periodcalendar.data.database.UserSettings
 import com.mjandroiddev.periodcalendar.data.model.ThemeMode
 import com.mjandroiddev.periodcalendar.data.repository.UserSettingsRepository
+import com.mjandroiddev.periodcalendar.firebase.AnalyticsLogger
 import com.mjandroiddev.periodcalendar.notifications.NotificationScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userSettingsRepository: UserSettingsRepository,
-    private val notificationScheduler: NotificationScheduler
+    private val notificationScheduler: NotificationScheduler,
+    private val analyticsLogger: AnalyticsLogger
 ) : ViewModel() {
 
     private val _userSettings = MutableStateFlow(UserSettings())
@@ -78,18 +80,32 @@ class SettingsViewModel @Inject constructor(
         val currentSettings = _userSettings.value
         val updatedSettings = currentSettings.copy(notifOvulation = enabled)
         updateSettings(updatedSettings, shouldRescheduleNotifications = true)
+        
+        // Track notification setting change
+        analyticsLogger.trackNotificationSettingChanged("ovulation", enabled)
     }
 
     fun updateFertileWindowNotification(enabled: Boolean) {
         val currentSettings = _userSettings.value
         val updatedSettings = currentSettings.copy(notifFertileWindow = enabled)
         updateSettings(updatedSettings, shouldRescheduleNotifications = true)
+        
+        // Track notification setting change
+        analyticsLogger.trackNotificationSettingChanged("fertile_window", enabled)
     }
 
     fun updateThemeMode(themeMode: ThemeMode) {
         val currentSettings = _userSettings.value
         val updatedSettings = currentSettings.copy(themeMode = themeMode.value)
         updateSettings(updatedSettings)
+        
+        // Track theme change
+        val themeValue = when (themeMode) {
+            ThemeMode.LIGHT -> AnalyticsLogger.THEME_LIGHT
+            ThemeMode.DARK -> AnalyticsLogger.THEME_DARK
+            ThemeMode.SYSTEM -> AnalyticsLogger.THEME_SYSTEM
+        }
+        analyticsLogger.trackThemeChanged(themeValue)
     }
 
     private fun updateSettings(
@@ -105,6 +121,13 @@ class SettingsViewModel @Inject constructor(
                 if (shouldRescheduleNotifications) {
                     notificationScheduler.rescheduleNotificationsAfterSettingsChange()
                 }
+                
+                // Update Crashlytics context with user preferences
+                analyticsLogger.setUserPreferences(
+                    themeMode = settings.themeMode,
+                    notificationsEnabled = settings.notifBeforePeriod > 0 || settings.notifOvulation || settings.notifFertileWindow,
+                    avgCycleLength = settings.avgCycleLength
+                )
                 
                 _saveMessage.value = "Settings saved"
                 

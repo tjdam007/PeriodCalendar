@@ -139,6 +139,40 @@
 # Keep broadcast receivers
 -keep class * extends android.content.BroadcastReceiver { *; }
 
+# ========== Firebase Rules ==========
+# Keep Firebase classes
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# Firebase Analytics
+-keep class com.google.firebase.analytics.** { *; }
+-keep class com.google.android.gms.measurement.** { *; }
+
+# Firebase Crashlytics
+-keep class com.google.firebase.crashlytics.** { *; }
+-keep class com.crashlytics.** { *; }
+-keep class com.google.firebase.crash.** { *; }
+-keepattributes SourceFile,LineNumberTable,*Annotation*
+
+# Firebase Cloud Messaging
+-keep class com.google.firebase.messaging.** { *; }
+-keep class com.google.firebase.iid.** { *; }
+
+# Keep Firebase configuration
+-keep class com.google.firebase.FirebaseOptions { *; }
+-keep class com.google.firebase.FirebaseApp { *; }
+
+# Keep our Firebase classes
+-keep class com.mjandroiddev.periodcalendar.firebase.** { *; }
+
+# Keep classes with Firebase annotations
+-keep @com.google.firebase.annotations.PublicApi class *
+-keepclassmembers class * {
+    @com.google.firebase.annotations.PublicApi *;
+}
+
 # ========== Optimization Settings ==========
 # Enable aggressive optimization
 -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
