@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,6 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import com.mjandroiddev.periodcalendar.ui.screens.CalendarScreen
 import com.mjandroiddev.periodcalendar.ui.screens.CycleScreen
 import com.mjandroiddev.periodcalendar.ui.screens.LogEntryScreen
+import com.mjandroiddev.periodcalendar.ui.screens.SettingsScreen
 import java.time.LocalDate
 
 data class BottomNavItem(
@@ -27,7 +29,8 @@ data class BottomNavItem(
 
 val bottomNavItems = listOf(
     BottomNavItem(Screen.Calendar, Icons.Filled.CalendarMonth, "Calendar"),
-    BottomNavItem(Screen.Cycle, Icons.Filled.Analytics, "Cycles")
+    BottomNavItem(Screen.Cycle, Icons.Filled.Analytics, "Cycles"),
+    BottomNavItem(Screen.Settings, Icons.Filled.Settings, "Settings")
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,6 +78,13 @@ fun PeriodCalendarNavigation() {
             }
             composable(Screen.Cycle.route) {
                 CycleScreen()
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
             composable(Screen.LogEntry.route) { backStackEntry ->
                 val dateString = backStackEntry.arguments?.getString("date") ?: LocalDate.now().toString()

@@ -16,6 +16,10 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideContext(@ApplicationContext context: Context): Context = context
+
+    @Provides
+    @Singleton
     fun providePeriodDatabase(@ApplicationContext context: Context): PeriodDatabase {
         return Room.databaseBuilder(
             context,

@@ -6,6 +6,7 @@ import com.mjandroiddev.periodcalendar.data.database.CycleEntry
 import com.mjandroiddev.periodcalendar.data.database.UserSettings
 import com.mjandroiddev.periodcalendar.data.repository.CycleEntryRepository
 import com.mjandroiddev.periodcalendar.data.repository.UserSettingsRepository
+import com.mjandroiddev.periodcalendar.notifications.NotificationScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val cycleEntryRepository: CycleEntryRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val notificationScheduler: NotificationScheduler
 ) : ViewModel() {
 
     private val _periods = MutableStateFlow<List<CycleEntry>>(emptyList())
@@ -50,18 +52,51 @@ class CalendarViewModel @Inject constructor(
     fun addPeriod(entry: CycleEntry) {
         viewModelScope.launch {
             cycleEntryRepository.insertEntry(entry)
+            
+            // Reschedule notifications after adding a period entry
+            if (entry.isPeriod) {
+                notificationScheduler.rescheduleNotificationsAfterPeriodEntry()
+            }
         }
     }
 
     fun updatePeriod(entry: CycleEntry) {
         viewModelScope.launch {
             cycleEntryRepository.updateEntry(entry)
+            
+            // Reschedule notifications if this was a period entry change
+            if (entry.isPeriod) {
+                notificationScheduler.rescheduleNotificationsAfterPeriodEntry()
+            }
         }
     }
 
     fun deletePeriod(entry: CycleEntry) {
         viewModelScope.launch {
             cycleEntryRepository.deleteEntry(entry)
+            
+            // Reschedule notifications after deleting a period entry
+            if (entry.isPeriod) {
+                notificationScheduler.rescheduleNotificationsAfterPeriodEntry()
+            }
+        }
+    }
+
+    fun updateNotificationSettings(
+        notifBeforePeriod: Int,
+        notifOvulation: Boolean,
+        notifFertileWindow: Boolean
+    ) {
+        viewModelScope.launch {
+            val currentSettings = userSettingsRepository.getUserSettingsOnce()
+            val updatedSettings = currentSettings.copy(
+                notifBeforePeriod = notifBeforePeriod,
+                notifOvulation = notifOvulation,
+                notifFertileWindow = notifFertileWindow
+            )
+            
+            userSettingsRepository.updateSettings(updatedSettings)
+            notificationScheduler.rescheduleNotificationsAfterSettingsChange()
         }
     }
 
