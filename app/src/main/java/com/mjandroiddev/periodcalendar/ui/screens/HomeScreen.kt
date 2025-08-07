@@ -38,7 +38,6 @@ fun HomeScreen(
     onNavigateToSupport: () -> Unit
 ) {
     val navController = rememberNavController()
-    
     Scaffold(
         bottomBar = {
             NavigationBar {

@@ -23,26 +23,27 @@ import com.mjandroiddev.periodcalendar.ui.theme.PeriodCalendarTheme
 import com.mjandroiddev.periodcalendar.ui.viewmodel.SettingsViewModel
 import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.core.content.edit
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    
+
     @Inject
     lateinit var analyticsLogger: AnalyticsLogger
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         // Track app first open - check if this is first time opening
         val sharedPrefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val isFirstOpen = sharedPrefs.getBoolean("is_first_open", true)
-        
+
         if (isFirstOpen) {
             analyticsLogger.trackAppFirstOpen()
-            sharedPrefs.edit().putBoolean("is_first_open", false).apply()
+            sharedPrefs.edit { putBoolean("is_first_open", false) }
         }
-        
+
         setContent {
             PeriodCalendarApp(analyticsLogger)
         }
@@ -55,23 +56,23 @@ private fun PeriodCalendarApp(analyticsLogger: AnalyticsLogger) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val userSettings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
     val systemInDarkTheme = isSystemInDarkTheme()
-    
+
     // Rating dialog state
     var showRatingDialog by remember { mutableStateOf(false) }
     var navigateToSupport by remember { mutableStateOf(false) }
-    
+
     // Check if we should show the rating dialog
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(3000) // Wait 3 seconds after app launch
         showRatingDialog = shouldShowRatingDialog(context)
     }
-    
+
     val darkTheme = when (ThemeMode.fromValue(userSettings.themeMode)) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> systemInDarkTheme
     }
-    
+
     // Set user preferences in Crashlytics when settings change
     LaunchedEffect(userSettings) {
         analyticsLogger.setUserPreferences(
@@ -80,7 +81,7 @@ private fun PeriodCalendarApp(analyticsLogger: AnalyticsLogger) {
             avgCycleLength = userSettings.avgCycleLength
         )
     }
-    
+
     PeriodCalendarTheme(darkTheme = darkTheme) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -92,7 +93,7 @@ private fun PeriodCalendarApp(analyticsLogger: AnalyticsLogger) {
                         settingsViewModel.updateThemeMode(themeMode)
                     }
                 )
-                
+
                 // Rating and Support Dialog Manager
                 RatingAndSupportDialogManager(
                     shouldShow = showRatingDialog,
@@ -113,7 +114,7 @@ private fun PeriodCalendarApp(analyticsLogger: AnalyticsLogger) {
             }
         }
     }
-    
+
     // Handle navigation to support screen
     if (navigateToSupport) {
         LaunchedEffect(Unit) {
