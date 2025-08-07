@@ -2,8 +2,10 @@ package com.mjandroiddev.periodcalendar.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mjandroiddev.periodcalendar.data.database.PeriodEntity
-import com.mjandroiddev.periodcalendar.data.repository.PeriodRepository
+import com.mjandroiddev.periodcalendar.data.database.CycleEntry
+import com.mjandroiddev.periodcalendar.data.database.UserSettings
+import com.mjandroiddev.periodcalendar.data.repository.CycleEntryRepository
+import com.mjandroiddev.periodcalendar.data.repository.UserSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,53 +16,67 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
-    private val periodRepository: PeriodRepository
+    private val cycleEntryRepository: CycleEntryRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) : ViewModel() {
 
-    private val _periods = MutableStateFlow<List<PeriodEntity>>(emptyList())
-    val periods: StateFlow<List<PeriodEntity>> = _periods.asStateFlow()
+    private val _periods = MutableStateFlow<List<CycleEntry>>(emptyList())
+    val periods: StateFlow<List<CycleEntry>> = _periods.asStateFlow()
 
-    private val _selectedDate = MutableStateFlow(LocalDate.now())
-    val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
+    private val _userSettings = MutableStateFlow(UserSettings())
+    val userSettings: StateFlow<UserSettings> = _userSettings.asStateFlow()
 
     init {
         loadPeriods()
+        loadUserSettings()
     }
 
     private fun loadPeriods() {
         viewModelScope.launch {
-            periodRepository.getAllPeriods().collect {
+            cycleEntryRepository.getAllEntries().collect {
                 _periods.value = it
             }
         }
     }
 
-    fun selectDate(date: LocalDate) {
-        _selectedDate.value = date
+    private fun loadUserSettings() {
+        viewModelScope.launch {
+            userSettingsRepository.getUserSettings().collect {
+                _userSettings.value = it
+            }
+        }
     }
 
+    fun addPeriod(entry: CycleEntry) {
+        viewModelScope.launch {
+            cycleEntryRepository.insertEntry(entry)
+        }
+    }
+
+    fun updatePeriod(entry: CycleEntry) {
+        viewModelScope.launch {
+            cycleEntryRepository.updateEntry(entry)
+        }
+    }
+
+    fun deletePeriod(entry: CycleEntry) {
+        viewModelScope.launch {
+            cycleEntryRepository.deleteEntry(entry)
+        }
+    }
+
+    // Legacy methods for backward compatibility
+    @Deprecated("Use addPeriod(CycleEntry) instead")
     fun addPeriod(startDate: LocalDate, endDate: LocalDate?, flow: Int, symptoms: String, notes: String) {
         viewModelScope.launch {
-            val period = PeriodEntity(
-                startDate = startDate,
-                endDate = endDate,
-                flow = flow,
-                symptoms = symptoms,
-                notes = notes
+            val entry = CycleEntry(
+                date = startDate,
+                isPeriod = true,
+                flowLevel = flow.toString(),
+                mood = symptoms,
+                cramps = "none"
             )
-            periodRepository.insertPeriod(period)
-        }
-    }
-
-    fun updatePeriod(period: PeriodEntity) {
-        viewModelScope.launch {
-            periodRepository.updatePeriod(period)
-        }
-    }
-
-    fun deletePeriod(period: PeriodEntity) {
-        viewModelScope.launch {
-            periodRepository.deletePeriod(period)
+            cycleEntryRepository.insertEntry(entry)
         }
     }
 }

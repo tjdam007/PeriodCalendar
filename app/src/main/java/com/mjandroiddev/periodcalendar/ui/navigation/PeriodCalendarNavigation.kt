@@ -16,6 +16,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mjandroiddev.periodcalendar.ui.screens.CalendarScreen
 import com.mjandroiddev.periodcalendar.ui.screens.CycleScreen
+import com.mjandroiddev.periodcalendar.ui.screens.LogEntryScreen
+import java.time.LocalDate
 
 data class BottomNavItem(
     val screen: Screen,
@@ -64,10 +66,25 @@ fun PeriodCalendarNavigation() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Calendar.route) {
-                CalendarScreen()
+                CalendarScreen(
+                    onNavigateToLogEntry = { date ->
+                        val dateString = date.toString()
+                        navController.navigate(Screen.LogEntry.createRoute(dateString))
+                    }
+                )
             }
             composable(Screen.Cycle.route) {
                 CycleScreen()
+            }
+            composable(Screen.LogEntry.route) { backStackEntry ->
+                val dateString = backStackEntry.arguments?.getString("date") ?: LocalDate.now().toString()
+                val selectedDate = LocalDate.parse(dateString)
+                LogEntryScreen(
+                    selectedDate = selectedDate,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }
