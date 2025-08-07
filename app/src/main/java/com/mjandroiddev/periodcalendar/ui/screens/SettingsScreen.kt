@@ -11,11 +11,13 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.room.util.TableInfo
 import com.mjandroiddev.periodcalendar.data.model.ThemeMode
 import com.mjandroiddev.periodcalendar.notifications.NotificationHelper
 import com.mjandroiddev.periodcalendar.ui.components.CardWithTitle
@@ -50,7 +53,7 @@ fun SettingsScreen(
     val userSettings by viewModel.userSettings.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val saveMessage by viewModel.saveMessage.collectAsStateWithLifecycle()
-    
+
     SettingsScreenContent(
         userSettings = userSettings,
         isLoading = isLoading,
@@ -93,10 +96,10 @@ private fun SettingsScreenContent(
 ) {
     val context = LocalContext.current
     val notificationHelper = remember { NotificationHelper(context) }
-    
+
     var showResetDialog by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }
-    
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -104,7 +107,7 @@ private fun SettingsScreenContent(
             showPermissionDialog = true
         }
     }
-    
+
     // Show save message as snackbar
     LaunchedEffect(saveMessage) {
         if (saveMessage != null) {
@@ -112,7 +115,7 @@ private fun SettingsScreenContent(
             onClearSaveMessage()
         }
     }
-    
+
     // Check notification permission on startup
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -121,54 +124,40 @@ private fun SettingsScreenContent(
             }
         }
     }
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Settings",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { showResetDialog = true }
-                    ) {
-                        Text("Reset")
-                    }
-                }
-            )
-        },
-        snackbarHost = {
-            if (saveMessage != null) {
-                Card(
-                    modifier = Modifier.padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.inverseSurface
-                    )
-                ) {
-                    Text(
-                        text = saveMessage,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.inverseOnSurface
+
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back"
                     )
                 }
+                Text(
+                    text = "Settings",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            TextButton(
+                onClick = { showResetDialog = true }
+            ) {
+                Text("Reset")
             }
         }
-    ) { paddingValues ->
+
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -190,7 +179,7 @@ private fun SettingsScreenContent(
                         range = 15..45,
                         helperText = "Typical range: 21-35 days"
                     )
-                    
+
                     // Period Duration
                     NumberInputField(
                         label = "Period Duration",
@@ -202,7 +191,7 @@ private fun SettingsScreenContent(
                     )
                 }
             }
-            
+
             // Notification Settings Section
             CardWithTitle(
                 title = "Notifications",
@@ -215,9 +204,9 @@ private fun SettingsScreenContent(
                     NotificationStatusCard(
                         notificationHelper = notificationHelper
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     // Days before period
                     NumberInputField(
                         label = "Remind me before period",
@@ -227,9 +216,9 @@ private fun SettingsScreenContent(
                         range = 0..7,
                         helperText = if (userSettings.notifBeforePeriod == 0) "Notifications disabled" else "Get notified before your period starts"
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     // Fertility Notifications
                     SettingsToggleItem(
                         title = "Ovulation Notification",
@@ -238,7 +227,7 @@ private fun SettingsScreenContent(
                         onCheckedChange = onOvulationNotificationChanged,
                         icon = Icons.Default.FavoriteBorder
                     )
-                    
+
                     SettingsToggleItem(
                         title = "Fertile Window Notification",
                         subtitle = "Get notified when fertile window starts",
@@ -248,7 +237,7 @@ private fun SettingsScreenContent(
                     )
                 }
             }
-            
+
             // Theme Settings Section
             CardWithTitle(
                 title = "Appearance",
@@ -261,14 +250,14 @@ private fun SettingsScreenContent(
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-                    
+
                     ThemeSelector(
                         selectedTheme = ThemeMode.fromValue(userSettings.themeMode),
                         onThemeChanged = onThemeChanged
                     )
                 }
             }
-            
+
             // Privacy Information Card
             Card(
                 colors = CardDefaults.cardColors(
@@ -291,7 +280,7 @@ private fun SettingsScreenContent(
                     )
                 }
             }
-            
+
             // Support Us Section
             if (onNavigateToSupport != null) {
                 Card(
@@ -299,7 +288,10 @@ private fun SettingsScreenContent(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    )
                 ) {
                     Row(
                         modifier = Modifier
@@ -340,7 +332,7 @@ private fun SettingsScreenContent(
                     }
                 }
             }
-            
+
             // About Section
             if (onNavigateToAbout != null) {
                 Card(
@@ -382,7 +374,7 @@ private fun SettingsScreenContent(
                 }
             }
         }
-        
+
         // Loading overlay
         if (isLoading) {
             Box(
@@ -395,13 +387,13 @@ private fun SettingsScreenContent(
             }
         }
     }
-    
+
     // Reset Confirmation Dialog
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
             title = { Text("Reset to Defaults") },
-            text = { 
+            text = {
                 Text("This will reset all settings to their default values. This action cannot be undone.")
             },
             confirmButton = {
@@ -421,13 +413,13 @@ private fun SettingsScreenContent(
             }
         )
     }
-    
+
     // Permission Dialog
     if (showPermissionDialog) {
         AlertDialog(
             onDismissRequest = { showPermissionDialog = false },
             title = { Text("Notification Permission") },
-            text = { 
+            text = {
                 Text("To receive period and fertility reminders, please enable notifications in your device settings.")
             },
             confirmButton = {
@@ -458,7 +450,7 @@ private fun NotificationStatusCard(
 ) {
     val notificationsEnabled = notificationHelper.areNotificationsEnabled()
     val context = LocalContext.current
-    
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (notificationsEnabled) {
@@ -487,7 +479,7 @@ private fun NotificationStatusCard(
                 },
                 modifier = Modifier.size(16.dp)
             )
-            
+
             Text(
                 text = if (notificationsEnabled) "Notifications enabled" else "Notifications disabled",
                 style = MaterialTheme.typography.bodySmall,
@@ -498,7 +490,7 @@ private fun NotificationStatusCard(
                 },
                 modifier = Modifier.weight(1f)
             )
-            
+
             if (!notificationsEnabled) {
                 TextButton(
                     onClick = {
@@ -532,7 +524,7 @@ private fun NumberInputField(
 ) {
     var textValue by remember(value) { mutableStateOf(value.toString()) }
     var isError by remember { mutableStateOf(false) }
-    
+
     Column {
         OutlinedTextField(
             value = textValue,
@@ -585,7 +577,7 @@ private fun SettingsToggleItem(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
         )
-        
+
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
@@ -598,7 +590,7 @@ private fun SettingsToggleItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        
+
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange
@@ -614,7 +606,7 @@ private fun ThemeSelector(
     onThemeChanged: (ThemeMode) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
@@ -631,7 +623,7 @@ private fun ThemeSelector(
                 .menuAnchor()
                 .fillMaxWidth()
         )
-        
+
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
