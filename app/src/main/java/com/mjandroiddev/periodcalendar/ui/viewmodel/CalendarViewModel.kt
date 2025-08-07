@@ -99,19 +99,4 @@ class CalendarViewModel @Inject constructor(
             notificationScheduler.rescheduleNotificationsAfterSettingsChange()
         }
     }
-
-    // Legacy methods for backward compatibility
-    @Deprecated("Use addPeriod(CycleEntry) instead")
-    fun addPeriod(startDate: LocalDate, endDate: LocalDate?, flow: Int, symptoms: String, notes: String) {
-        viewModelScope.launch {
-            val entry = CycleEntry(
-                date = startDate,
-                isPeriod = true,
-                flowLevel = flow.toString(),
-                mood = symptoms,
-                cramps = "none"
-            )
-            cycleEntryRepository.insertEntry(entry)
-        }
-    }
 }

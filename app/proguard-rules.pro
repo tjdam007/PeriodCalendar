@@ -173,6 +173,29 @@
     @com.google.firebase.annotations.PublicApi *;
 }
 
+# ========== Google Play Billing Rules ==========
+# Keep Google Play Billing classes
+-keep class com.android.billingclient.api.** { *; }
+-keep class com.android.vending.billing.** { *; }
+-dontwarn com.android.billingclient.**
+
+# Keep billing result codes and purchase states
+-keep class com.android.billingclient.api.BillingClient$BillingResponseCode { *; }
+-keep class com.android.billingclient.api.Purchase$PurchaseState { *; }
+-keep class com.android.billingclient.api.BillingClient$ProductType { *; }
+
+# Keep our billing manager
+-keep class com.mjandroiddev.periodcalendar.billing.** { *; }
+
+# Keep purchase and product details classes
+-keep class com.android.billingclient.api.Purchase { *; }
+-keep class com.android.billingclient.api.ProductDetails { *; }
+-keep class com.android.billingclient.api.ProductDetails$OneTimePurchaseOfferDetails { *; }
+
+# Keep billing listeners and callbacks
+-keep class * implements com.android.billingclient.api.PurchasesUpdatedListener { *; }
+-keep class * implements com.android.billingclient.api.BillingClientStateListener { *; }
+
 # ========== Optimization Settings ==========
 # Enable aggressive optimization
 -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*

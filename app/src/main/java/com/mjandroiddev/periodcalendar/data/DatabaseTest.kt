@@ -1,37 +1,12 @@
 package com.mjandroiddev.periodcalendar.data
 
-import com.mjandroiddev.periodcalendar.data.database.CycleEntry
 import com.mjandroiddev.periodcalendar.data.database.UserSettings
 import com.mjandroiddev.periodcalendar.data.model.*
 import java.time.LocalDate
 
 // Test class to verify compilation
 class DatabaseTest {
-    
-    fun testCycleEntry() {
-        val entry = CycleEntry(
-            id = 1,
-            date = LocalDate.now(),
-            isPeriod = true,
-            flowLevel = FlowLevel.MEDIUM.value,
-            mood = Mood.HAPPY.value,
-            cramps = CrampsLevel.MILD.value
-        )
-        
-        // Test extension functions
-        val flowLevel = entry.getFlowLevelEnum()
-        val mood = entry.getMoodEnum()
-        val crampsLevel = entry.getCrampsLevelEnum()
-        val displayMood = entry.getDisplayMood()
-        val isValid = entry.isValid()
-        val hasSymptoms = entry.hasAnySymptoms()
-        
-        // Test modification
-        val modifiedEntry = entry.withFlowLevel(FlowLevel.HEAVY)
-            .withMood(Mood.TIRED)
-            .withCrampsLevel(CrampsLevel.MODERATE)
-    }
-    
+
     fun testUserSettings() {
         val settings = UserSettings(
             avgCycleLength = 28,

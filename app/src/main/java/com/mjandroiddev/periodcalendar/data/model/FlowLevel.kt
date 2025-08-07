@@ -12,6 +12,10 @@ enum class FlowLevel(val displayName: String, val value: String) {
             return entries.find { it.value == value } ?: NONE
         }
         
+        fun fromString(value: String?): FlowLevel? {
+            return entries.find { it.name.equals(value, ignoreCase = true) }
+        }
+        
         fun getAllValues(): List<String> = entries.map { it.value }
         fun getAllDisplayNames(): List<String> = entries.map { it.displayName }
     }

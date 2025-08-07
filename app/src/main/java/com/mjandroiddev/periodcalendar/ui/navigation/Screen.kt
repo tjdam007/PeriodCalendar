@@ -20,6 +20,7 @@ sealed class Screen(val route: String) {
     }
     
     object About : Screen("about")
+    object SupportUs : Screen("support_us")
     
     companion object {
         // Route patterns for navigation matching
@@ -30,5 +31,6 @@ sealed class Screen(val route: String) {
         const val SETTINGS_ROUTE = "settings"
         const val LOG_ENTRY_ROUTE = "log_entry/{date}"
         const val ABOUT_ROUTE = "about"
+        const val SUPPORT_US_ROUTE = "support_us"
     }
 }
