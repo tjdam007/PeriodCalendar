@@ -34,7 +34,8 @@ private val bottomNavItems = listOf(
 @Composable
 fun HomeScreen(
     onNavigateToLogEntry: (LocalDate) -> Unit,
-    onNavigateToAbout: () -> Unit
+    onNavigateToAbout: () -> Unit,
+    onNavigateToSupport: () -> Unit
 ) {
     val navController = rememberNavController()
     
@@ -97,6 +98,7 @@ fun HomeScreen(
                         }
                     },
                     onNavigateToAbout = onNavigateToAbout,
+                    onNavigateToSupport = onNavigateToSupport,
                     onThemeChanged = { /* Handle theme changes if needed */ }
                 )
             }

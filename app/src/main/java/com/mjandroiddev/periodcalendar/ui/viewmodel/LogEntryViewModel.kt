@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlin.math.abs
 
 @HiltViewModel
 class LogEntryViewModel @Inject constructor(
@@ -156,12 +157,12 @@ class LogEntryViewModel @Inject constructor(
             if (entry.isPeriod) {
                 // Track period logged
                 val symptoms = mutableListOf<String>()
-                entry.mood?.let { symptoms.add(it.name.toLowerCase()) }
-                entry.cramps?.let { if (it != CrampLevel.NONE) symptoms.add("cramps_${it.name.toLowerCase()}") }
+                entry.mood?.let { symptoms.add(it.name.lowercase()) }
+                entry.cramps?.let { if (it != CrampLevel.NONE) symptoms.add("cramps_${it.name.lowercase()}") }
                 
                 analyticsLogger.trackPeriodLogged(
                     date = entry.date.toString(),
-                    flowLevel = entry.flowLevel?.name?.toLowerCase() ?: "unknown",
+                    flowLevel = entry.flowLevel?.name?.lowercase() ?: "unknown",
                     symptomsSelected = symptoms
                 )
             }
@@ -170,7 +171,7 @@ class LogEntryViewModel @Inject constructor(
             entry.mood?.let { mood ->
                 analyticsLogger.trackSymptomLogged(
                     symptomType = "mood",
-                    intensity = mood.name.toLowerCase(),
+                    intensity = mood.name.lowercase(),
                     cycleDay = calculateCycleDay(entry.date)
                 )
             }
@@ -179,7 +180,7 @@ class LogEntryViewModel @Inject constructor(
                 if (cramps != CrampLevel.NONE) {
                     analyticsLogger.trackSymptomLogged(
                         symptomType = "cramps",
-                        intensity = cramps.name.toLowerCase(),
+                        intensity = cramps.name.lowercase(),
                         cycleDay = calculateCycleDay(entry.date)
                     )
                 }
@@ -196,7 +197,7 @@ class LogEntryViewModel @Inject constructor(
         return try {
             val today = LocalDate.now()
             val daysDiff = java.time.temporal.ChronoUnit.DAYS.between(date, today).toInt()
-            kotlin.math.abs(daysDiff) + 1
+            abs(daysDiff) + 1
         } catch (e: Exception) {
             1 // Default to day 1 if calculation fails
         }

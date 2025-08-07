@@ -40,6 +40,9 @@ fun PeriodCalendarNavigation(
                 },
                 onNavigateToAbout = {
                     navController.navigate(Screen.About.route)
+                },
+                onNavigateToSupport = {
+                    navController.navigate(Screen.SupportUs.route)
                 }
             )
         }
@@ -72,6 +75,15 @@ fun PeriodCalendarNavigation(
         // About Screen
         composable(Screen.About.route) {
             AboutScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Support Us Screen
+        composable(Screen.SupportUs.route) {
+            SupportUsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

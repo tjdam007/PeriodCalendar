@@ -35,9 +35,12 @@ room = "2.7.2"
 work = "2.10.3"
 
 # Firebase
-firebase-bom = "33.7.0"
+firebase-bom = "34.0.0"
 google-services = "4.4.3"
-firebase-crashlytics-gradle = "3.0.2"
+firebase-crashlytics-gradle = "3.0.5"
+
+# Google Play Billing
+billing = "8.0.0"
 
 # Testing
 junit = "4.13.2"
@@ -84,6 +87,9 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
+
+# Google Play Billing
+billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

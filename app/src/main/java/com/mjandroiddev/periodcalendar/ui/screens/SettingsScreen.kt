@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mjandroiddev.periodcalendar.data.model.ThemeMode
@@ -42,6 +43,7 @@ import com.mjandroiddev.periodcalendar.ui.viewmodel.SettingsViewModel
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAbout: (() -> Unit)? = null,
+    onNavigateToSupport: (() -> Unit)? = null,
     onThemeChanged: (ThemeMode) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -65,6 +67,7 @@ fun SettingsScreen(
         onResetToDefaults = viewModel::resetToDefaults,
         onNavigateBack = onNavigateBack,
         onNavigateToAbout = onNavigateToAbout,
+        onNavigateToSupport = onNavigateToSupport,
         onClearSaveMessage = viewModel::clearSaveMessage
     )
 }
@@ -85,6 +88,7 @@ private fun SettingsScreenContent(
     onResetToDefaults: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToAbout: (() -> Unit)?,
+    onNavigateToSupport: (() -> Unit)?,
     onClearSaveMessage: () -> Unit
 ) {
     val context = LocalContext.current
@@ -285,6 +289,55 @@ private fun SettingsScreenContent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
+                }
+            }
+            
+            // Support Us Section
+            if (onNavigateToSupport != null) {
+                Card(
+                    modifier = Modifier.clickable { onNavigateToSupport() },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "💝",
+                                fontSize = 18.sp
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Support Development",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Help keep this app free and privacy-focused",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Navigate to Support",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
             
@@ -649,6 +702,7 @@ private fun SettingsScreenLightPreview() {
                 onResetToDefaults = { },
                 onNavigateBack = { },
                 onNavigateToAbout = { },
+                onNavigateToSupport = { },
                 onClearSaveMessage = { }
             )
         }
@@ -680,6 +734,7 @@ private fun SettingsScreenDarkPreview() {
                 onResetToDefaults = { },
                 onNavigateBack = { },
                 onNavigateToAbout = { },
+                onNavigateToSupport = { },
                 onClearSaveMessage = { }
             )
         }
