@@ -24,7 +24,6 @@ import com.mjandroiddev.periodcalendar.data.model.FlowLevel
 import com.mjandroiddev.periodcalendar.data.model.MoodType
 import com.mjandroiddev.periodcalendar.data.model.CrampLevel
 import com.mjandroiddev.periodcalendar.ui.components.CardWithTitle
-import com.mjandroiddev.periodcalendar.ui.components.PeriodButton
 import com.mjandroiddev.periodcalendar.ui.theme.PeriodCalendarTheme
 import com.mjandroiddev.periodcalendar.ui.viewmodel.CalendarViewModel
 import java.time.LocalDate

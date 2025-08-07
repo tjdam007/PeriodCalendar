@@ -8,7 +8,6 @@ import com.mjandroiddev.periodcalendar.data.model.FlowLevel
 import com.mjandroiddev.periodcalendar.data.model.MoodType
 import com.mjandroiddev.periodcalendar.data.repository.CycleEntryRepository
 import com.mjandroiddev.periodcalendar.firebase.AnalyticsLogger
-import com.mjandroiddev.periodcalendar.utils.CyclePredictionUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

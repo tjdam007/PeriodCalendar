@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,12 +31,9 @@ import com.mjandroiddev.periodcalendar.data.model.FlowLevel
 import com.mjandroiddev.periodcalendar.data.model.MoodType
 import com.mjandroiddev.periodcalendar.data.model.CrampLevel
 import com.mjandroiddev.periodcalendar.ui.theme.PeriodCalendarTheme
-// import com.mjandroiddev.periodcalendar.utils.CyclePredictionUtil // TODO: Implement
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.*
 
 /**
  * Data class representing the state of a calendar day
