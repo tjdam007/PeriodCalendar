@@ -7,8 +7,13 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,52 +21,49 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mjandroiddev.periodcalendar.data.model.ThemeMode
 import com.mjandroiddev.periodcalendar.notifications.NotificationHelper
 import com.mjandroiddev.periodcalendar.ui.components.CardWithTitle
 import com.mjandroiddev.periodcalendar.ui.theme.PeriodCalendarTheme
-import com.mjandroiddev.periodcalendar.ui.viewmodel.CalendarViewModel
+import com.mjandroiddev.periodcalendar.ui.viewmodel.SettingsViewModel
 
 // Parent Composable - Handles ViewModel and state management
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
-    viewModel: CalendarViewModel = hiltViewModel()
+    onThemeChanged: (ThemeMode) -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val userSettings by viewModel.userSettings.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val saveMessage by viewModel.saveMessage.collectAsStateWithLifecycle()
     
     SettingsScreenContent(
-        periodReminderDays = userSettings.notifBeforePeriod,
-        ovulationNotification = userSettings.notifOvulation,
-        fertilityNotification = userSettings.notifFertileWindow,
-        onPeriodReminderChanged = { days ->
-            viewModel.updateNotificationSettings(
-                notifBeforePeriod = days,
-                notifOvulation = userSettings.notifOvulation,
-                notifFertileWindow = userSettings.notifFertileWindow
-            )
+        userSettings = userSettings,
+        isLoading = isLoading,
+        saveMessage = saveMessage,
+        onCycleLengthChanged = viewModel::updateCycleLength,
+        onPeriodDurationChanged = viewModel::updatePeriodDuration,
+        onNotificationDaysChanged = viewModel::updateNotificationDays,
+        onOvulationNotificationChanged = viewModel::updateOvulationNotification,
+        onFertilityNotificationChanged = viewModel::updateFertileWindowNotification,
+        onThemeChanged = { themeMode ->
+            viewModel.updateThemeMode(themeMode)
+            onThemeChanged(themeMode)
         },
-        onOvulationNotificationChanged = { enabled ->
-            viewModel.updateNotificationSettings(
-                notifBeforePeriod = userSettings.notifBeforePeriod,
-                notifOvulation = enabled,
-                notifFertileWindow = userSettings.notifFertileWindow
-            )
-        },
-        onFertilityNotificationChanged = { enabled ->
-            viewModel.updateNotificationSettings(
-                notifBeforePeriod = userSettings.notifBeforePeriod,
-                notifOvulation = userSettings.notifOvulation,
-                notifFertileWindow = enabled
-            )
-        },
-        onNavigateBack = onNavigateBack
+        onResetToDefaults = viewModel::resetToDefaults,
+        onNavigateBack = onNavigateBack,
+        onClearSaveMessage = viewModel::clearSaveMessage
     )
 }
 
@@ -69,19 +71,24 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsScreenContent(
-    periodReminderDays: Int,
-    ovulationNotification: Boolean,
-    fertilityNotification: Boolean,
-    onPeriodReminderChanged: (Int) -> Unit,
+    userSettings: com.mjandroiddev.periodcalendar.data.database.UserSettings,
+    isLoading: Boolean,
+    saveMessage: String?,
+    onCycleLengthChanged: (Int) -> Unit,
+    onPeriodDurationChanged: (Int) -> Unit,
+    onNotificationDaysChanged: (Int) -> Unit,
     onOvulationNotificationChanged: (Boolean) -> Unit,
     onFertilityNotificationChanged: (Boolean) -> Unit,
-    onNavigateBack: () -> Unit
+    onThemeChanged: (ThemeMode) -> Unit,
+    onResetToDefaults: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onClearSaveMessage: () -> Unit
 ) {
     val context = LocalContext.current
     val notificationHelper = remember { NotificationHelper(context) }
     
+    var showResetDialog by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }
-    var showNotificationSettingsDialog by remember { mutableStateOf(false) }
     
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -91,8 +98,16 @@ private fun SettingsScreenContent(
         }
     }
     
+    // Show save message as snackbar
+    LaunchedEffect(saveMessage) {
+        if (saveMessage != null) {
+            kotlinx.coroutines.delay(2000)
+            onClearSaveMessage()
+        }
+    }
+    
+    // Check notification permission on startup
     LaunchedEffect(Unit) {
-        // Check and request notification permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!notificationHelper.areNotificationsEnabled()) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -105,7 +120,7 @@ private fun SettingsScreenContent(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Notification Settings",
+                        text = "Settings",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -116,8 +131,31 @@ private fun SettingsScreenContent(
                             contentDescription = "Back"
                         )
                     }
+                },
+                actions = {
+                    TextButton(
+                        onClick = { showResetDialog = true }
+                    ) {
+                        Text("Reset")
+                    }
                 }
             )
+        },
+        snackbarHost = {
+            if (saveMessage != null) {
+                Card(
+                    modifier = Modifier.padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.inverseSurface
+                    )
+                ) {
+                    Text(
+                        text = saveMessage,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.inverseOnSurface
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -126,99 +164,108 @@ private fun SettingsScreenContent(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Notification Status Card
-            NotificationStatusCard(
-                notificationHelper = notificationHelper,
-                onOpenSettings = { showNotificationSettingsDialog = true }
-            )
-            
-            // Period Reminder Settings
+            // Cycle Settings Section
             CardWithTitle(
-                title = "Period Reminders",
+                title = "Cycle Settings",
+                icon = Icons.Default.CalendarMonth
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // Average Cycle Length
+                    NumberInputField(
+                        label = "Average Cycle Length",
+                        value = userSettings.avgCycleLength,
+                        onValueChanged = onCycleLengthChanged,
+                        suffix = "days",
+                        range = 15..45,
+                        helperText = "Typical range: 21-35 days"
+                    )
+                    
+                    // Period Duration
+                    NumberInputField(
+                        label = "Period Duration",
+                        value = userSettings.periodDuration,
+                        onValueChanged = onPeriodDurationChanged,
+                        suffix = "days",
+                        range = 1..10,
+                        helperText = "How many days your period typically lasts"
+                    )
+                }
+            }
+            
+            // Notification Settings Section
+            CardWithTitle(
+                title = "Notifications",
                 icon = Icons.Default.Notifications
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = "Get notified before your period starts",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    // Notification permission status
+                    NotificationStatusCard(
+                        notificationHelper = notificationHelper
                     )
                     
-                    PeriodReminderSelector(
-                        selectedDays = periodReminderDays,
-                        onDaysChanged = onPeriodReminderChanged
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Days before period
+                    NumberInputField(
+                        label = "Remind me before period",
+                        value = userSettings.notifBeforePeriod,
+                        onValueChanged = onNotificationDaysChanged,
+                        suffix = if (userSettings.notifBeforePeriod == 1) "day" else "days",
+                        range = 0..7,
+                        helperText = if (userSettings.notifBeforePeriod == 0) "Notifications disabled" else "Get notified before your period starts"
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Fertility Notifications
+                    SettingsToggleItem(
+                        title = "Ovulation Notification",
+                        subtitle = "Get notified on predicted ovulation day",
+                        checked = userSettings.notifOvulation,
+                        onCheckedChange = onOvulationNotificationChanged,
+                        icon = Icons.Default.FavoriteBorder
+                    )
+                    
+                    SettingsToggleItem(
+                        title = "Fertile Window Notification",
+                        subtitle = "Get notified when fertile window starts",
+                        checked = userSettings.notifFertileWindow,
+                        onCheckedChange = onFertilityNotificationChanged,
+                        icon = Icons.Default.Favorite
                     )
                 }
             }
             
-            // Fertility Tracking Settings
+            // Theme Settings Section
             CardWithTitle(
-                title = "Fertility Tracking",
-                icon = Icons.Default.FavoriteBorder
+                title = "Appearance",
+                icon = Icons.Default.Palette
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Fertile Window Notification
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Fertile Window",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Notify when fertile window starts",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = fertilityNotification,
-                            onCheckedChange = onFertilityNotificationChanged
-                        )
-                    }
+                Column {
+                    Text(
+                        text = "Theme Mode",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                     
-                    Divider()
-                    
-                    // Ovulation Notification
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Ovulation Day",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Notify on predicted ovulation day",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = ovulationNotification,
-                            onCheckedChange = onOvulationNotificationChanged
-                        )
-                    }
+                    ThemeSelector(
+                        selectedTheme = ThemeMode.fromValue(userSettings.themeMode),
+                        onThemeChanged = onThemeChanged
+                    )
                 }
             }
             
-            // Information Card
+            // Privacy Information Card
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                 )
             ) {
                 Row(
@@ -226,18 +273,56 @@ private fun SettingsScreenContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Info,
+                        imageVector = Icons.Default.Security,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        text = "Notifications use discreet messages to protect your privacy. They will only appear if you have period data to make predictions from.",
+                        text = "Your data is stored locally on your device. Notifications use discreet messages to protect your privacy.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
         }
+        
+        // Loading overlay
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+    }
+    
+    // Reset Confirmation Dialog
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Reset to Defaults") },
+            text = { 
+                Text("This will reset all settings to their default values. This action cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onResetToDefaults()
+                        showResetDialog = false
+                    }
+                ) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
     
     // Permission Dialog
@@ -268,56 +353,27 @@ private fun SettingsScreenContent(
             }
         )
     }
-    
-    // Notification Settings Dialog
-    if (showNotificationSettingsDialog) {
-        AlertDialog(
-            onDismissRequest = { showNotificationSettingsDialog = false },
-            title = { Text("Notification Settings") },
-            text = { 
-                Text("You can manage notification preferences for different types of reminders in your device settings.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
-                        context.startActivity(intent)
-                        showNotificationSettingsDialog = false
-                    }
-                ) {
-                    Text("Open Settings")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showNotificationSettingsDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 }
 
 @Composable
 private fun NotificationStatusCard(
-    notificationHelper: NotificationHelper,
-    onOpenSettings: () -> Unit
+    notificationHelper: NotificationHelper
 ) {
     val notificationsEnabled = notificationHelper.areNotificationsEnabled()
+    val context = LocalContext.current
     
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (notificationsEnabled) {
-                MaterialTheme.colorScheme.primaryContainer
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
             } else {
-                MaterialTheme.colorScheme.errorContainer
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
             }
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -331,40 +387,34 @@ private fun NotificationStatusCard(
                     MaterialTheme.colorScheme.onPrimaryContainer
                 } else {
                     MaterialTheme.colorScheme.onErrorContainer
-                }
+                },
+                modifier = Modifier.size(16.dp)
             )
             
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (notificationsEnabled) "Notifications Enabled" else "Notifications Disabled",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = if (notificationsEnabled) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onErrorContainer
-                    }
-                )
-                Text(
-                    text = if (notificationsEnabled) {
-                        "Your reminder settings will work as configured"
-                    } else {
-                        "Enable notifications to receive reminders"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (notificationsEnabled) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onErrorContainer
-                    }
-                )
-            }
+            Text(
+                text = if (notificationsEnabled) "Notifications enabled" else "Notifications disabled",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (notificationsEnabled) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onErrorContainer
+                },
+                modifier = Modifier.weight(1f)
+            )
             
             if (!notificationsEnabled) {
-                TextButton(onClick = onOpenSettings) {
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    }
+                ) {
                     Text(
                         text = "Enable",
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
             }
@@ -372,47 +422,159 @@ private fun NotificationStatusCard(
     }
 }
 
+// Number Input Field Component
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PeriodReminderSelector(
-    selectedDays: Int,
-    onDaysChanged: (Int) -> Unit
+private fun NumberInputField(
+    label: String,
+    value: Int,
+    onValueChanged: (Int) -> Unit,
+    suffix: String,
+    range: IntRange,
+    helperText: String
 ) {
-    val dayOptions = listOf(0, 1, 2, 3, 5, 7)
+    var textValue by remember(value) { mutableStateOf(value.toString()) }
+    var isError by remember { mutableStateOf(false) }
     
     Column {
-        Text(
-            text = "Remind me:",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp)
+        OutlinedTextField(
+            value = textValue,
+            onValueChange = { newValue ->
+                textValue = newValue
+                val intValue = newValue.toIntOrNull()
+                if (intValue != null && intValue in range) {
+                    onValueChanged(intValue)
+                    isError = false
+                } else {
+                    isError = newValue.isNotEmpty()
+                }
+            },
+            label = { Text(label) },
+            suffix = { Text(suffix) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = isError,
+            supportingText = {
+                Text(
+                    text = if (isError) "Value must be between ${range.first} and ${range.last}" else helperText,
+                    color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+// Settings Toggle Item Component
+@Composable
+private fun SettingsToggleItem(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
         )
         
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.fillMaxWidth()
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+// Theme Selector Component
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemeSelector(
+    selectedTheme: ThemeMode,
+    onThemeChanged: (ThemeMode) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = selectedTheme.displayName,
+            onValueChange = { },
+            readOnly = true,
+            label = { Text("Theme") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            dayOptions.forEachIndexed { index, days ->
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = dayOptions.size
-                    ),
-                    onClick = { onDaysChanged(days) },
-                    selected = selectedDays == days,
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                ) {
-                    Text(
-                        text = when (days) {
-                            0 -> "Off"
-                            1 -> "1 day"
-                            else -> "$days days"
-                        },
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
+            ThemeMode.entries.forEach { theme ->
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = when (theme) {
+                                    ThemeMode.LIGHT -> Icons.Default.LightMode
+                                    ThemeMode.DARK -> Icons.Default.DarkMode
+                                    ThemeMode.SYSTEM -> Icons.Default.SettingsBrightness
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column {
+                                Text(theme.displayName)
+                                Text(
+                                    text = when (theme) {
+                                        ThemeMode.LIGHT -> "Always use light theme"
+                                        ThemeMode.DARK -> "Always use dark theme"
+                                        ThemeMode.SYSTEM -> "Follow system setting"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    },
+                    onClick = {
+                        onThemeChanged(theme)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
             }
         }
     }
@@ -424,13 +586,25 @@ private fun SettingsScreenLightPreview() {
     PeriodCalendarTheme(darkTheme = false) {
         Surface {
             SettingsScreenContent(
-                periodReminderDays = 1,
-                ovulationNotification = true,
-                fertilityNotification = false,
-                onPeriodReminderChanged = { },
+                userSettings = com.mjandroiddev.periodcalendar.data.database.UserSettings(
+                    avgCycleLength = 28,
+                    periodDuration = 5,
+                    notifBeforePeriod = 1,
+                    notifOvulation = true,
+                    notifFertileWindow = false,
+                    themeMode = "system"
+                ),
+                isLoading = false,
+                saveMessage = null,
+                onCycleLengthChanged = { },
+                onPeriodDurationChanged = { },
+                onNotificationDaysChanged = { },
                 onOvulationNotificationChanged = { },
                 onFertilityNotificationChanged = { },
-                onNavigateBack = { }
+                onThemeChanged = { },
+                onResetToDefaults = { },
+                onNavigateBack = { },
+                onClearSaveMessage = { }
             )
         }
     }
@@ -442,13 +616,25 @@ private fun SettingsScreenDarkPreview() {
     PeriodCalendarTheme(darkTheme = true) {
         Surface {
             SettingsScreenContent(
-                periodReminderDays = 3,
-                ovulationNotification = false,
-                fertilityNotification = true,
-                onPeriodReminderChanged = { },
+                userSettings = com.mjandroiddev.periodcalendar.data.database.UserSettings(
+                    avgCycleLength = 30,
+                    periodDuration = 6,
+                    notifBeforePeriod = 3,
+                    notifOvulation = false,
+                    notifFertileWindow = true,
+                    themeMode = "dark"
+                ),
+                isLoading = false,
+                saveMessage = "Settings saved",
+                onCycleLengthChanged = { },
+                onPeriodDurationChanged = { },
+                onNotificationDaysChanged = { },
                 onOvulationNotificationChanged = { },
                 onFertilityNotificationChanged = { },
-                onNavigateBack = { }
+                onThemeChanged = { },
+                onResetToDefaults = { },
+                onNavigateBack = { },
+                onClearSaveMessage = { }
             )
         }
     }
