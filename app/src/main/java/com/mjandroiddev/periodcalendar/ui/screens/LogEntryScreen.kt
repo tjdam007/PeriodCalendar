@@ -1,19 +1,20 @@
 package com.mjandroiddev.periodcalendar.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -144,15 +145,14 @@ private fun LogEntryScreenContent(
                         }
                     )
                 }
-                
-                if (isPeriod) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Flow Level",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+            }
+            
+            // Flow Level Section (only show if period day is selected)
+            if (isPeriod) {
+                CardWithTitle(
+                    title = "Flow Level",
+                    icon = Icons.Default.Opacity
+                ) {
                     FlowLevelSelector(
                         selectedFlow = selectedFlow,
                         onFlowSelected = { selectedFlow = it }
@@ -176,12 +176,6 @@ private fun LogEntryScreenContent(
                 title = "Symptoms",
                 icon = Icons.Default.Healing
             ) {
-                Text(
-                    text = "Cramps Level",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
                 CrampsLevelSelector(
                     selectedCramps = selectedCramps,
                     onCrampsSelected = { selectedCramps = it }
@@ -191,8 +185,7 @@ private fun LogEntryScreenContent(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Save Button
-            PeriodButton(
-                text = if (existingEntry != null) "Update Entry" else "Save Entry",
+            Button(
                 onClick = {
                     val entry = CycleEntry(
                         id = existingEntry?.id ?: 0,
@@ -205,8 +198,32 @@ private fun LogEntryScreenContent(
                     onSaveEntry(entry)
                 },
                 enabled = hasChanges,
-                modifier = Modifier.fillMaxWidth()
-            )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Save,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = if (existingEntry != null) "Update Entry" else "Save Entry",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
     }
     
@@ -242,37 +259,60 @@ private fun LogEntryScreenContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FlowLevelSelector(
     selectedFlow: FlowLevel,
     onFlowSelected: (FlowLevel) -> Unit
 ) {
-    val flowLevels = FlowLevel.entries.filter { it != FlowLevel.NONE }
+    val flowLevels = listOf(FlowLevel.LIGHT, FlowLevel.MEDIUM, FlowLevel.HEAVY)
     
-    Column(
-        modifier = Modifier.selectableGroup()
-    ) {
-        flowLevels.forEach { flowLevel ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        selected = selectedFlow == flowLevel,
-                        onClick = { onFlowSelected(flowLevel) },
-                        role = Role.RadioButton
-                    )
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
+    Column {
+        Text(
+            text = "Flow Level",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            flowLevels.forEachIndexed { index, flowLevel ->
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = flowLevels.size
+                    ),
+                    onClick = { onFlowSelected(flowLevel) },
                     selected = selectedFlow == flowLevel,
-                    onClick = null // Handled by selectable modifier
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = flowLevel.displayName,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = when (flowLevel) {
+                                FlowLevel.LIGHT -> Icons.Default.WaterDrop
+                                FlowLevel.MEDIUM -> Icons.Default.Opacity
+                                FlowLevel.HEAVY -> Icons.Default.Bloodtype
+                                else -> Icons.Default.Circle
+                            },
+                            contentDescription = flowLevel.displayName,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = flowLevel.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
         }
     }
@@ -283,44 +323,88 @@ private fun MoodSelector(
     selectedMood: Mood,
     onMoodSelected: (Mood) -> Unit
 ) {
+    val targetMoods = listOf(Mood.HAPPY, Mood.SAD, Mood.ANGRY, Mood.ANXIOUS)
+    
     Column {
         Text(
             text = "How are you feeling?",
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(bottom = 12.dp)
         )
-        Spacer(modifier = Modifier.height(8.dp))
         
-        // Mood chips
-        val moods = Mood.entries.filter { it != Mood.NONE }
-        val chunkedMoods = moods.chunked(3) // 3 moods per row
-        
-        chunkedMoods.forEach { moodRow ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                moodRow.forEach { mood ->
-                    FilterChip(
-                        selected = selectedMood == mood,
-                        onClick = { 
-                            onMoodSelected(if (selectedMood == mood) Mood.NONE else mood)
-                        },
-                        label = {
-                            Text(
-                                text = "${mood.emoji} ${mood.displayName}".trim(),
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                // Fill remaining space if last row has fewer items
-                repeat(3 - moodRow.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            targetMoods.forEach { mood ->
+                MoodCard(
+                    mood = mood,
+                    isSelected = selectedMood == mood,
+                    onClick = { 
+                        onMoodSelected(if (selectedMood == mood) Mood.NONE else mood)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MoodCard(
+    mood: Mood,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.height(80.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
+        border = if (isSelected) {
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        } else null
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = when (mood) {
+                    Mood.HAPPY -> Icons.Default.SentimentVerySatisfied
+                    Mood.SAD -> Icons.Default.SentimentDissatisfied
+                    Mood.ANGRY -> Icons.Default.SentimentVeryDissatisfied
+                    Mood.ANXIOUS -> Icons.Default.Psychology
+                    else -> Icons.Default.Mood
+                },
+                contentDescription = mood.displayName,
+                modifier = Modifier.size(24.dp),
+                tint = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = mood.displayName,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
     }
 }
@@ -332,31 +416,108 @@ private fun CrampsLevelSelector(
 ) {
     val crampsLevels = CrampsLevel.entries
     
-    Column(
-        modifier = Modifier.selectableGroup()
-    ) {
-        crampsLevels.forEach { crampsLevel ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        selected = selectedCramps == crampsLevel,
-                        onClick = { onCrampsSelected(crampsLevel) },
-                        role = Role.RadioButton
-                    )
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = selectedCramps == crampsLevel,
-                    onClick = null // Handled by selectable modifier
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = crampsLevel.displayName,
-                    style = MaterialTheme.typography.bodyLarge
+    Column {
+        Text(
+            text = "Cramps Level",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            crampsLevels.forEach { crampsLevel ->
+                CrampsButton(
+                    crampsLevel = crampsLevel,
+                    isSelected = selectedCramps == crampsLevel,
+                    onClick = { onCrampsSelected(crampsLevel) },
+                    modifier = Modifier.weight(1f)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CrampsButton(
+    crampsLevel: CrampsLevel,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                Color.Transparent
+            },
+            contentColor = if (isSelected) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        ),
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outline
+            }
+        )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Visual indicator for severity
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                val dotsCount = when (crampsLevel) {
+                    CrampsLevel.NONE -> 0
+                    CrampsLevel.MILD -> 1
+                    CrampsLevel.MODERATE -> 2
+                    CrampsLevel.SEVERE -> 3
+                }
+                
+                repeat(3) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(
+                                color = if (index < dotsCount) {
+                                    if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        when (crampsLevel) {
+                                            CrampsLevel.MILD -> Color(0xFF4CAF50)
+                                            CrampsLevel.MODERATE -> Color(0xFFFF9800)
+                                            CrampsLevel.SEVERE -> Color(0xFFFF5722)
+                                            else -> Color.Transparent
+                                        }
+                                    }
+                                } else {
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                },
+                                shape = CircleShape
+                            )
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = crampsLevel.displayName,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
         }
     }
 }
@@ -377,7 +538,7 @@ private fun LogEntryScreenLightPreview() {
     }
 }
 
-@Preview(name = "Log Entry - Dark Theme")
+@Preview(name = "Log Entry - Dark Theme - Existing Entry")
 @Composable
 private fun LogEntryScreenDarkPreview() {
     PeriodCalendarTheme(darkTheme = true) {
@@ -389,9 +550,25 @@ private fun LogEntryScreenDarkPreview() {
                     date = LocalDate.now(),
                     isPeriod = true,
                     flowLevel = FlowLevel.MEDIUM.value,
-                    mood = Mood.TIRED.value,
-                    cramps = CrampsLevel.MILD.value
+                    mood = Mood.HAPPY.value,
+                    cramps = CrampsLevel.MODERATE.value
                 ),
+                onSaveEntry = { },
+                onDeleteEntry = { },
+                onNavigateBack = { }
+            )
+        }
+    }
+}
+
+@Preview(name = "Log Entry - New Entry Preview")
+@Composable
+private fun LogEntryScreenNewEntryPreview() {
+    PeriodCalendarTheme(darkTheme = false) {
+        Surface {
+            LogEntryScreenContent(
+                selectedDate = LocalDate.now().plusDays(1),
+                existingEntry = null,
                 onSaveEntry = { },
                 onDeleteEntry = { },
                 onNavigateBack = { }
