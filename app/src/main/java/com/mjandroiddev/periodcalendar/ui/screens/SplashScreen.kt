@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,7 +30,7 @@ fun SplashScreen(
 ) {
     // Animation states
     val infiniteTransition = rememberInfiniteTransition(label = "splash_animation")
-    
+
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.8f,
         targetValue = 1.1f,
@@ -39,7 +40,7 @@ fun SplashScreen(
         ),
         label = "scale_animation"
     )
-    
+
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 1f,
@@ -49,13 +50,13 @@ fun SplashScreen(
         ),
         label = "alpha_animation"
     )
-    
+
     // Navigate to home after delay
     LaunchedEffect(Unit) {
         delay(3000) // Show splash for 3 seconds
         onNavigateToHome()
     }
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -75,30 +76,14 @@ fun SplashScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // App Logo/Icon with animation
-            Card(
-                modifier = Modifier
-                    .size(120.dp)
-                    .scale(scale)
-                    .alpha(alpha),
-                shape = CircleShape,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // You can replace this with your app icon
-                    Text(
-                        text = "🌸",
-                        fontSize = 48.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-            
+            Image(
+                modifier = Modifier.size(80.dp),
+                contentScale = ContentScale.FillBounds,
+                painter = painterResource(R.drawable.splash_icon),
+                contentDescription = "App icon"
+            )
+
+
             // App Name
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -113,7 +98,7 @@ fun SplashScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 )
-                
+
                 Text(
                     text = "Track your cycle with confidence",
                     style = MaterialTheme.typography.bodyLarge,
@@ -121,9 +106,9 @@ fun SplashScreen(
                     textAlign = TextAlign.Center
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(40.dp))
-            
+
             // Loading indicator
             CircularProgressIndicator(
                 modifier = Modifier.size(32.dp),
@@ -132,7 +117,7 @@ fun SplashScreen(
                 strokeWidth = 3.dp
             )
         }
-        
+
         // Version info at bottom
         Column(
             modifier = Modifier
@@ -162,7 +147,7 @@ private fun SplashScreenLightPreview() {
     }
 }
 
-@Preview(name = "Splash Screen - Dark") 
+@Preview(name = "Splash Screen - Dark")
 @Composable
 private fun SplashScreenDarkPreview() {
     PeriodCalendarTheme(darkTheme = true) {

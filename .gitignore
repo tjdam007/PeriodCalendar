@@ -7,3 +7,4 @@ local.properties.template
 /build/reports/problems/problems-report.html
 /.kotlin/
 /app/release/*
+/app/production/release/app-production-release.aab
